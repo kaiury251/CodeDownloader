@@ -1,4 +1,4 @@
-name: Build APK
+name: Build APK from ZIP
 
 on:
   push:
@@ -11,6 +11,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Extrair o ZIP
+        run: |
+          unzip -q CodeDownloader.zip -d extracted
+          ROOT=$(dirname "$(find extracted -name settings.gradle.kts | head -n1)")
+          echo "Projeto encontrado em: $ROOT"
+          echo "ROOT=$ROOT" >> "$GITHUB_ENV"
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -22,10 +29,12 @@ jobs:
         with:
           gradle-version: 8.9
 
-      - name: Build debug APK
-        run: gradle assembleDebug --no-daemon
+      - name: Compilar APK debug
+        run: |
+          cd "$ROOT"
+          gradle assembleDebug --no-daemon
 
       - uses: actions/upload-artifact@v4
         with:
           name: CodeDownloader-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: ${{ env.ROOT }}/app/build/outputs/apk/debug/*.apk
